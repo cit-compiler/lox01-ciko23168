@@ -1,16 +1,72 @@
-package com.craftinginterpreters.tool;
+package com.craftinginterpreters.lox;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.List;
-
-public class GenerateAst {
-  public static void main(String[] args) throws IOException {
-    if (args.length != 1) {
-      System.err.println("Usage: generate_ast <output directory>");
-      System.exit(64);
-    }
-    String outputDir = args[0];
+abstract class Expr {
+  
+  interface Visitor<R> {
+    R visitBinaryExpr(Binary expr);
+    R visitGroupingExpr(Grouping expr);
+    R visitLiteralExpr(Literal expr);
+    R visitUnaryExpr(Unary expr);
   }
+  
+
+  static class Binary extends Expr {
+    Binary(Expr left, Token operator, Expr right) {
+      this.left = left;
+      this.operator = operator;
+      this.right = right;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitBinaryExpr(this);
+    }
+
+    final Expr left;
+    final Token operator;
+    final Expr right;
+  }
+
+  static class Grouping extends Expr {
+    Grouping(Expr expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitGroupingExpr(this);
+    }
+
+    final Expr expression;
+  }
+
+  static class Literal extends Expr {
+    Literal(Object value) {
+      this.value = value;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitLiteralExpr(this);
+    }
+
+    final Object value;
+  }
+
+  static class Unary extends Expr {
+    Unary(Token operator, Expr right) {
+      this.operator = operator;
+      this.right = right;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitUnaryExpr(this);
+    }
+
+    final Token operator;
+    final Expr right;
+  }
+
+  abstract <R> R accept(Visitor<R> visitor);
 }

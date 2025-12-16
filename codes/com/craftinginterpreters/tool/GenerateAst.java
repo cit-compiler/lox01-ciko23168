@@ -53,6 +53,7 @@ private static void defineVisitor(
     }
 
     writer.println("  }");
+    
     // Visitor pattern.
     writer.println();
     writer.println("    @Override");
