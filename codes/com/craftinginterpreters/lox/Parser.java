@@ -23,15 +23,45 @@ class Parser {
   }
 
 private Stmt statement() {
+  if (match(VAR)) return varDeclaration(); 
   if (match(PRINT)) return printStatement();
   return expressionStatement();
 }
+  private Expr assignment() {
+    Expr expr = equality();
+
+    if (match(EQUAL)) {
+      Token equals = previous();
+      Expr value = assignment();
+
+      if (expr instanceof Expr.Variable) {
+        Token name = ((Expr.Variable)expr).name;
+        return new Expr.Assign(name, value);
+      }
+
+      error(equals, "Invalid assignment target."); 
+    }
+
+    return expr;
+  }
 
 private Stmt printStatement() {
   Expr value = expression();
   consume(SEMICOLON, "Expect ';' after value.");
   return new Stmt.Print(value);
 }
+
+  private Stmt varDeclaration() {
+    Token name = consume(IDENTIFIER, "Expect variable name.");
+
+    Expr initializer = null;
+    if (match(EQUAL)) {
+      initializer = expression();
+    }
+
+    consume(SEMICOLON, "Expect ';' after variable declaration.");
+    return new Stmt.Var(name, initializer);
+  }
 
 private Stmt expressionStatement() {
   Expr expr = expression();
@@ -42,7 +72,6 @@ private Stmt expressionStatement() {
   private Expr expression() {
     return equality();
   }
-
   private Expr equality() {
     Expr expr = comparison();
 
@@ -114,6 +143,10 @@ private Stmt expressionStatement() {
       Expr expr = expression();
       consume(RIGHT_PAREN, "Expect ')' after expression.");
       return new Expr.Grouping(expr);
+    }
+
+    if (match(IDENTIFIER)) {
+      return new Expr.Variable(previous());
     }
 
     throw error(peek(), "Expect expression.");
